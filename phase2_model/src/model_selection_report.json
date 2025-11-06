@@ -1,0 +1,79 @@
+{
+  "selected_model": "yolov8s",
+  "selection_date": "2025-11-06",
+  "justification": {
+    "primary_reasons": [
+      "Optimal speed-accuracy tradeoff for autonomous driving",
+      "Real-time inference capability (1.2ms)",
+      "Suitable accuracy for production deployment (45-50% mAP)",
+      "Deployable model size (21.5MB)",
+      "Modern anchor-free architecture"
+    ],
+    "technical_advantages": [
+      "CSPDarknet53 backbone with efficient feature extraction",
+      "PAN-FPN neck for multi-scale feature fusion",
+      "Decoupled detection head for better performance",
+      "Transfer learning from COCO pretraining",
+      "GPU memory efficient (6GB training, 2GB inference)"
+    ],
+    "deployment_considerations": [
+      "Edge device compatible",
+      "TensorRT optimization ready",
+      "Multi-GPU scaling support",
+      "Batch processing capable"
+    ]
+  },
+  "alternatives_considered": {
+    "yolov8n": {
+      "params": "3.2M",
+      "size_mb": 6.2,
+      "expected_map50": "37-42%",
+      "inference_speed_ms": 0.8,
+      "description": "Nano - Fastest, lowest accuracy"
+    },
+    "yolov8s": {
+      "params": "11.2M",
+      "size_mb": 21.5,
+      "expected_map50": "45-50%",
+      "inference_speed_ms": 1.2,
+      "description": "Small - Balanced speed/accuracy"
+    },
+    "yolov8m": {
+      "params": "25.9M",
+      "size_mb": 49.7,
+      "expected_map50": "50-55%",
+      "inference_speed_ms": 2.1,
+      "description": "Medium - Higher accuracy, slower"
+    },
+    "yolov8l": {
+      "params": "43.7M",
+      "size_mb": 83.7,
+      "expected_map50": "53-58%",
+      "inference_speed_ms": 3.2,
+      "description": "Large - High accuracy, slow"
+    },
+    "yolov8x": {
+      "params": "68.2M",
+      "size_mb": 130.5,
+      "expected_map50": "55-60%",
+      "inference_speed_ms": 4.8,
+      "description": "Extra Large - Highest accuracy, slowest"
+    }
+  },
+  "expected_performance": {
+    "overall_map50": "45-50%",
+    "car_detection_ap": "~55%",
+    "person_detection_ap": "~50%",
+    "small_objects_ap": "~40%",
+    "inference_speed": "1.2ms",
+    "training_time": "~8 hours (V100)"
+  },
+  "architecture_details": {
+    "backbone": "CSPDarknet53",
+    "neck": "PAN-FPN",
+    "head": "Decoupled Detection Head",
+    "parameters": "11.2M",
+    "input_size": "640x640",
+    "anchor_free": true
+  }
+}

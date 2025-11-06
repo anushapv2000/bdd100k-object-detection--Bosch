@@ -1,0 +1,30 @@
+# Phase 2: Model Training and Pipeline Requirements
+
+# Core ML Framework
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+
+# Data Processing
+numpy>=1.21.0
+pandas>=1.3.0
+opencv-python>=4.5.0
+Pillow>=8.0.0
+
+# Configuration and Utilities
+pyyaml>=6.0
+tqdm>=4.60.0
+pathlib2>=2.3.0
+
+# Training Monitoring
+tensorboard>=2.8.0
+wandb>=0.12.0
+
+# Model Export and Optimization
+onnx>=1.12.0
+onnxruntime>=1.12.0
+
+# Development and Testing
+pytest>=6.0.0
+black>=22.0.0
+pylint>=2.12.0

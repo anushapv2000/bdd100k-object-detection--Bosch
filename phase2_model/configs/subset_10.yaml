@@ -1,0 +1,18 @@
+# Subset dataset configuration
+# Created for training subset of D:\VLM\bdd100k-object-detection\assignment_data_bdd\phase2_model\outputs\subset_10
+
+path: D:\VLM\bdd100k-object-detection\assignment_data_bdd\phase2_model\outputs\subset_10
+train: train
+val: train
+
+names:
+  0: person
+  1: rider
+  2: car
+  3: truck
+  4: bus
+  5: train
+  6: motor
+  7: bike
+  8: traffic light
+  9: traffic sign

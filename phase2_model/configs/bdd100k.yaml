@@ -1,0 +1,44 @@
+# Dataset configuration for BDD100k object detection
+# This file is used by YOLOv8 for training and validation
+
+# Dataset root (relative path from phase2_model/)
+path: ../../data
+
+# Relative paths from 'path' above
+# YOLO format structure: each split contains images/ and labels/ subdirectories
+train: bdd100k_yolo_dataset/train  # Contains images/ and labels/ subdirectories
+val: bdd100k_yolo_dataset/val      # Contains images/ and labels/ subdirectories
+
+# Class names (10 detection classes)
+names:
+  0: person
+  1: rider
+  2: car
+  3: truck
+  4: bus
+  5: train
+  6: motor
+  7: bike
+  8: traffic light
+  9: traffic sign
+
+# Number of classes
+nc: 10
+
+# Image size
+imgsz: 640
+
+# Additional metadata
+dataset: BDD100k
+task: detect
+version: 2.0
+description: Berkeley DeepDrive 100k dataset for autonomous driving object detection - YOLO format
+
+# Dataset statistics
+# Train: 69,863 images
+# Val: 10,000 images
+# Classes: 10 (bike, bus, car, motor, person, rider, traffic light, traffic sign, train, truck)
+
+# NOTE: The current data loader (data_loader.py) handles BDD100k JSON format directly.
+# For Ultralytics native training, you would need to convert to YOLO format (.txt files).
+# However, our custom training pipeline uses the JSON directly.
