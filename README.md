@@ -9,11 +9,18 @@ Three-phase implementation covering data analysis, model training, and evaluatio
 - **Phase 2** (5 pts): YOLOv8 model training pipeline  
 - **Phase 3** (10 pts): Evaluation, visualization, and performance analysis
 
+## Prerequisites
+
+**BDD100K Dataset Required**: Download JSON annotation files from [Berkeley Deep Drive](https://bdd-data.berkeley.edu/)
+- `bdd100k_labels_images_train.json` → `phase1_data_analysis/data/labels/`
+- `bdd100k_labels_images_val.json` → `phase1_data_analysis/data/labels/`
+
 ## Structure
 
 ```
 assignment_data_bdd/
 ├── phase1_data_analysis/     # Docker-based data analysis
+│   └── data/labels/         # Place BDD100K JSON files here
 ├── phase2_model/            # Virtual env training pipeline
 ├── phase3_evaluation/       # Virtual env evaluation framework
 └── README.md
@@ -24,6 +31,7 @@ assignment_data_bdd/
 ### Phase 1: Data Analysis (Docker)
 ```bash
 cd phase1_data_analysis
+# Ensure JSON files are in data/labels/ directory
 docker build -t bdd100k-analysis .
 docker run -p 8501:8501 bdd100k-analysis
 # Access: http://localhost:8501
