@@ -1,32 +1,82 @@
 # Phase 1: BDD100k Dataset Analysis
 
 ## Overview
-Comprehensive analysis of BDD100k dataset focusing on 10 object detection classes with bounding box annotations.
+This phase performs comprehensive analysis of the BDD100k dataset for object detection tasks, focusing on 10 detection classes with bounding box annotations. The analysis includes class distribution, data quality assessment, statistical analysis, anomaly detection, and interactive visualization dashboard.
+
+**Objective**: Analyze BDD100k dataset to understand data characteristics, identify patterns, and provide insights for model training optimization.
+
+## Prerequisites
+- Python 3.9+
+- Docker (for containerized execution)
 
 ## Dataset Setup
 
-**Required BDD100K JSON annotation files:**
+### Step 1: Download BDD100K Dataset
+1. Visit [Berkeley Deep Drive Dataset](https://bdd-data.berkeley.edu/)
+2. Register and download the following files:
+   - **79K Images** (5.3GB) - Complete image dataset
+   - **Labels** (107MB) - Object detection annotations
+
+### Step 2: Directory Structure Setup
+Place the downloaded files according to this structure:
 ```
 phase1_data_analysis/
-└── data/
-    └── labels/
-        ├── bdd100k_labels_images_train.json    # Training annotations  
-        └── bdd100k_labels_images_val.json      # Validation annotations
+├── data/
+│   ├── labels/
+│   │   ├── bdd100k_labels_images_train.json
+│   │   └── bdd100k_labels_images_val.json
+│   └── bdd100k_yolo_dataset/
+│       ├── train/images/
+│       └── val/images/
+├── data_analysis.py
+├── streamlit_dashboard.py
+├── requirements.txt
+└── Dockerfile
 ```
 
-Download the BDD100K detection labels from [Berkeley Deep Drive](https://bdd-data.berkeley.edu/) and place them in the `data/labels/` directory.
+## Installation
 
-## Quick Start
+### Option 1: Local Python Setup
+```bash
+# Clone repository
+git clone https://github.com/anushapv2000/bdd100k-object-detection.git
+cd phase1_data_analysis
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Option 2: Docker Setup (Recommended)
+```bash
+docker build -t bdd100k-analysis .
+docker run -p 8501:8501 -v $(pwd)/data:/app/data bdd100k-analysis
+```
+
+## How to Run
+
+### Basic Execution
 ```bash
 # Run analysis
 python data_analysis.py
 
-# Launch interactive Streamlit dashboard
-streamlit run streamlit_dashboard.py
-
-# Or specify custom port
-streamlit run streamlit_dashboard.py --server.port 8502
+# Launch dashboard
+streamlit run streamlit_dashboard.py --server.port 8501
 ```
+
+### Combined Execution
+```bash
+python data_analysis.py && streamlit run streamlit_dashboard.py --server.port 8501
+```
+
+**Access Dashboard**: http://localhost:8501
+
+## Files & Features
+
+### Core Files
+- **`data_analysis.py`** - Main analysis script
+- **`streamlit_dashboard.py`** - Interactive web dashboard
+- **`requirements.txt`** - Python dependencies
+- **`Dockerfile`** - Container setup
 
 ## Features
 - **Class Distribution Analysis**: Train/validation split comparison
@@ -119,22 +169,6 @@ The comprehensive analysis reveals several critical insights for model developme
 4. **High Occlusion Rate**: 69% of images contain overlapping objects
 5. **Training Recommendations**: Class balancing, multi-scale detection, and occlusion handling required
 
-## Project Structure
-```
-phase1_data_analysis/
-├── data_analysis.py           # Main analysis script
-├── streamlit_dashboard.py    # Interactive Streamlit dashboard
-├── requirements.txt          # Dependencies
-├── data/                     # BDD100K dataset location
-│   └── labels/              # Required JSON annotation files
-│       ├── bdd100k_labels_images_train.json    # Training labels
-│       └── bdd100k_labels_images_val.json      # Validation labels
-└── output_samples/           # Generated visualizations
-    └── organized_samples/    # 7 categorized folders
-```
-
-## Interactive Dashboard
-
 ### Dashboard Overview
 The Streamlit dashboard provides a comprehensive web-based interface for exploring the BDD100k dataset analysis results.
 
@@ -147,24 +181,5 @@ The Streamlit dashboard provides a comprehensive web-based interface for explori
 - **Data Quality Analysis**: Anomaly detection and class imbalance warnings
 - **Object Density**: Histogram showing objects-per-image distribution
 - **Key Insights**: Summary tables and class balance metrics
-
-### Technical Features
-- **Performance**: Cached data loading with `@st.cache_data`
-- **Responsive**: Mobile-friendly design with adaptive layouts
-- **Interactive**: Plotly charts with zoom, pan, and hover details
-- **Professional**: Clean interface suitable for presentations
-
-## Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-
-## Docker Support
-```bash
-docker build -t bdd100k-analysis .
-docker run -p 8501:8501 bdd100k-analysis
-```
-Dashboard will be available at `http://localhost:8501`
 
 ---
