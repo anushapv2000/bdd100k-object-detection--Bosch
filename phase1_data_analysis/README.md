@@ -3,6 +3,19 @@
 ## Overview
 Comprehensive analysis of BDD100k dataset focusing on 10 object detection classes with bounding box annotations.
 
+## Dataset Setup
+
+**Required BDD100K JSON annotation files:**
+```
+phase1_data_analysis/
+└── data/
+    └── labels/
+        ├── bdd100k_labels_images_train.json    # Training annotations  
+        └── bdd100k_labels_images_val.json      # Validation annotations
+```
+
+Download the BDD100K detection labels from [Berkeley Deep Drive](https://bdd-data.berkeley.edu/) and place them in the `data/labels/` directory.
+
 ## Quick Start
 ```bash
 # Run analysis
@@ -112,7 +125,10 @@ phase1_data_analysis/
 ├── data_analysis.py           # Main analysis script
 ├── streamlit_dashboard.py    # Interactive Streamlit dashboard
 ├── requirements.txt          # Dependencies
-├── data/                     # Dataset (not included)
+├── data/                     # BDD100K dataset location
+│   └── labels/              # Required JSON annotation files
+│       ├── bdd100k_labels_images_train.json    # Training labels
+│       └── bdd100k_labels_images_val.json      # Validation labels
 └── output_samples/           # Generated visualizations
     └── organized_samples/    # 7 categorized folders
 ```
@@ -152,4 +168,3 @@ docker run -p 8501:8501 bdd100k-analysis
 Dashboard will be available at `http://localhost:8501`
 
 ---
-*Assignment submission for BDD100k object detection dataset analysis*
