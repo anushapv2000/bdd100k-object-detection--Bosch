@@ -71,6 +71,90 @@ Input (640×640×3) → Backbone → Neck → Head → Outputs
 - **Proven baseline**: Extensively validated on multiple datasets
 - **Feature reusability**: Generic object features applicable to autonomous driving scenarios
 
+## Dataset Setup & YOLO Format Conversion
+
+### Required BDD100K Dataset Structure
+
+**Step 1: Download BDD100K Dataset**
+Download from [Berkeley Deep Drive](https://bdd-data.berkeley.edu/):
+- Detection images (train/val: ~70K + 10K images)
+- Detection labels (JSON format)
+
+**Step 2: Initial Dataset Placement**
+```
+bdd100k-object-detection--Bosch/
+├── phase1_data_analysis/
+│   └── data/
+│       └── labels/                              # Place JSON files here
+│           ├── bdd100k_labels_images_train.json # Training annotations
+│           └── bdd100k_labels_images_val.json   # Validation annotations
+└── data/
+    └── bdd100k_yolo_dataset/                          # Place image folders here
+        ├── train/                               # ~70K training images (.jpg)
+        └── val/                                 # ~10K validation images (.jpg)
+```
+
+**Step 3: Run YOLO Format Conversion**
+```bash
+cd phase2_model
+python src/convert_to_yolo.py
+```
+
+This script:
+- **Input**: Reads JSON files from `../../phase1_data_analysis/data/labels/`
+- **Processing**: Converts BDD100K bounding boxes to YOLO format
+- **Output**: Creates `.txt` label files in `../../data/bdd100k_labels_yolo/`
+
+**Step 4: Final YOLO Dataset Structure**
+After conversion, manually organize to match training expectations:
+```
+bdd100k-object-detection--Bosch/
+└── data/
+    └── bdd100k_yolo_dataset/                    # Final structure for training
+        ├── train/
+        │   ├── images/                          # Copy/move train images here
+        │   └── labels/                          # Copy converted .txt files here
+        └── val/
+            ├── images/                          # Copy/move val images here
+            └── labels/                          # Copy converted .txt files here
+```
+
+### YOLO Label Format Details
+
+Each `.txt` file contains one line per object:
+```
+class_id x_center y_center width height
+```
+
+**Format Specifications:**
+- `class_id`: Integer (0-9) representing BDD100K object class
+- `x_center, y_center`: Object center coordinates (normalized 0-1)
+- `width, height`: Object dimensions (normalized 0-1)
+- All coordinates relative to image dimensions (1280x720 for BDD100K)
+
+**Example label file (`0a0a0b1a-7c39d841.txt`):**
+```
+2 0.514583 0.405556 0.171875 0.194444    # car: center=(659,292), size=(220,140)
+0 0.721875 0.638889 0.046875 0.125000    # person: center=(923,460), size=(60,90)
+8 0.156250 0.180556 0.015625 0.044444    # traffic light: center=(200,130), size=(20,32)
+```
+
+### BDD100K Class Mapping
+```
+Class ID | BDD100K Category | Description
+---------|------------------|------------------
+0        | person          | Pedestrians
+1        | rider           | People on bikes/motorcycles
+2        | car             | Passenger vehicles
+3        | truck           | Commercial vehicles
+4        | bus             | Public transport buses
+5        | train           | Rail vehicles
+6        | motor           | Motorcycles (vehicle)
+7        | bike            | Bicycles (vehicle)
+8        | traffic light   | Traffic signals
+9        | traffic sign    | Road signs
+```
+
 ## Core Components
 
 | Component | File | Purpose |
@@ -96,17 +180,27 @@ phase2_model/
 
 ## Quick Start
 
-### 1. Setup
+### 1. Environment Setup
 ```powershell
 # Install all dependencies from requirements file
 pip install -r requirements.txt
+```
+
+### 2. Dataset Conversion (Required First)
+```powershell
+# Convert BDD100K JSON annotations to YOLO format
+python src/convert_to_yolo.py
+
+# This creates: ../../data/bdd100k_labels_yolo/train/ and /val/ with .txt files
+# Next: Manually organize images and labels into bdd100k_yolo_dataset structure
+# (See "Dataset Setup & YOLO Format Conversion" section above for details)
 ```
 
 **Note**: Commands below use `--device cpu` for compatibility. Remove this flag to use GPU if available.
 
 **Training Outputs**: Standard YOLO training generates plots (confusion matrix, PR curves, training batches) as part of the training process - these are appropriate for Phase 2.
 
-### 2. Training (Assignment Demo)
+### 3. Training (Assignment Demo)
 ```powershell
 # 1-epoch demo training (Assignment requirement) - RECOMMENDED
 python src/training.py --epochs 1 --batch 4 --device cpu --create-subset --subset-yolo-size 10
@@ -117,12 +211,12 @@ python src/training.py --epochs 1 --batch 4 --device cpu --use-custom-loader    
 python src/training.py --epochs 1 --batch 4 --device cpu --create-subset --subset-yolo-size 50  # Larger subset
 ```
 
-### 3. Model Selection Analysis
+### 4. Model Selection Analysis
 ```powershell
 python src/model_selection.py
 ```
 
-### 4. Inference Testing
+### 5. Inference Testing
 ```powershell
 # Single image prediction
 python src/inference.py --image "outputs\subset_10\train\images\0bb001f6-80239764.jpg" --device cpu --conf 0.3
@@ -208,4 +302,3 @@ python src/inference.py --benchmark "outputs\subset_10\train\images\0bb001f6-802
 - ✅ **Output generation**: Prediction JSON and visualized images saved
 
 ---
-**Assignment Status**: ✅ **COMPLETE** - All Phase 2 requirements fulfilled and tested
