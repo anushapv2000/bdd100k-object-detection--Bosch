@@ -28,7 +28,7 @@ assignment_data_bdd/
 
 ## Quick Start
 
-### Phase 1: Data Analysis (Docker)
+### Phase 1: Data Analysis (Docker)📄 **[phase1_data_analysis/README.md](phase1_data_analysis/README.md)**
 ```bash
 cd phase1_data_analysis
 # Ensure JSON files are in data/labels/ directory
@@ -37,7 +37,7 @@ docker run -p 8501:8501 bdd100k-analysis
 # Access: http://localhost:8501
 ```
 
-### Phase 2: Model Training (Virtual Environment)
+### Phase 2: Model Training (Virtual Environment)📄 **[phase2_model/README.md](phase2_model/README.md)**
 ```bash
 cd phase2_model
 python -m venv training_env
@@ -48,7 +48,7 @@ pip install -r requirements.txt
 python src/training.py --epochs 1 --batch 4 --create-subset --subset-yolo-size 10
 ```
 
-### Phase 3: Evaluation (Virtual Environment)
+### Phase 3: Evaluation (Virtual Environment)📄 **[phase3_evaluation/README.md](phase3_evaluation/README.md)**
 ```bash
 cd phase3_evaluation
 pip install -r src/requirements.txt
