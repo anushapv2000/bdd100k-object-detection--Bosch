@@ -7,10 +7,12 @@ and comparative analysis between train and validation splits.
 """
 
 import os
-
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from pathlib import Path
+import matplotlib.pyplot as plt
+import numpy as np
 
 from data_analysis import (
     analyze_class_distribution,
@@ -18,12 +20,13 @@ from data_analysis import (
     analyze_train_val_split,
     identify_anomalies,
     load_labels,
+    analyze_bbox_sizes,
 )
 
 # Configuration constants
 TRAIN_LABELS_PATH = "data/labels/bdd100k_labels_images_train.json"
 VAL_LABELS_PATH = "data/labels/bdd100k_labels_images_val.json"
-IMAGES_PATH = "../data/bdd100k_yolo_dataset/train/images/"
+IMAGES_PATH = "data/bdd100k_yolo_dataset/train/images/"
 
 # Style constants
 COLORS = {
@@ -50,6 +53,10 @@ LEGEND_HORIZONTAL = {
     "xanchor": "right",
     "x": 1,
 }
+
+# Create docs directory for saving visualizations
+DOCS_DIR = Path('docs')
+DOCS_DIR.mkdir(exist_ok=True)
 
 
 def create_bar_chart(df, x_col, y_cols, colors, title, y_title, log_scale=False):
@@ -209,6 +216,41 @@ def load_and_analyze_data():
     )
 
 
+def save_matplotlib_visualizations(train_labels, val_labels, train_class_counts, val_class_counts):
+    """Save static matplotlib visualizations to docs folder"""
+    
+    try:
+        # Get bbox and object data
+        from data_analysis import analyze_bbox_sizes, analyze_objects_per_image
+        bbox_df = analyze_bbox_sizes(train_labels)
+        obj_df = analyze_objects_per_image(train_labels)
+        
+        objects_per_image_list = obj_df["object_count"].tolist()
+        bbox_sizes = bbox_df["area"].tolist()
+        
+        # Import the save functions from data_analysis
+        from data_analysis import (
+            save_class_distribution_charts,
+            save_object_complexity_chart,
+            save_bbox_size_chart
+        )
+        
+        print("\n" + "="*60)
+        print("GENERATING DOCUMENTATION VISUALIZATIONS")
+        print("="*60)
+        
+        save_class_distribution_charts(train_class_counts, val_class_counts)
+        save_object_complexity_chart(objects_per_image_list)
+        save_bbox_size_chart(bbox_sizes)
+        
+        print(f"\n✓ All visualizations saved to '{DOCS_DIR}/' directory")
+        return True
+        
+    except Exception as e:
+        print(f"Warning: Could not save visualizations: {e}")
+        return False
+
+
 def main():
     """Main Streamlit application."""
     # Page configuration
@@ -276,8 +318,23 @@ def main():
             val_obj_per_img,
         ) = load_and_analyze_data()
 
+    # Save matplotlib visualizations to docs folder (ADD THIS SECTION)
+    if not (DOCS_DIR / 'class_distribution_chart.png').exists():
+        with st.spinner("Generating documentation images..."):
+            success = save_matplotlib_visualizations(
+                train_labels, val_labels, train_class_counts, val_class_counts
+            )
+            if success:
+                st.success(f"✓ Documentation images saved to '{DOCS_DIR}/' folder")
+                # Show list of generated files
+                st.info("Generated files:")
+                for img_file in sorted(DOCS_DIR.glob('*.png')):
+                    st.text(f"  ✓ {img_file.name}")
+
     # Generate sample visualizations if needed
     output_dir = "output_samples"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     organized_dir = os.path.join(output_dir, "organized_samples")
 
     if not os.path.exists(organized_dir):
