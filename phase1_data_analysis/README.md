@@ -49,7 +49,7 @@ pip install -r requirements.txt
 ### Option 2: Docker Setup (Recommended)
 ```bash
 docker build -t bdd100k-analysis .
-docker run -p 8501:8501 -v $(pwd)/data:/app/data bdd100k-analysis
+docker run -p 8501:8501 -v $(pwd):/app bdd100k-analysis
 ```
 
 ## How to Run
@@ -143,21 +143,30 @@ All samples include bounding box visualizations with class labels for detailed i
 ![Class Distribution Log Scale](docs/class_distribution_log_chart.png)
 *Log scale view highlighting underrepresented classes for better visibility*
 
+![Class Distribution Percentage](docs/class_distribution_percentage.png)
+*Percentage distribution for relative class representation analysis*
+
 #### Object Complexity Analysis
 ![Objects per Image](docs/objects_per_image_chart.png)
 *Distribution showing 3-91 objects per image with average of 18.4 objects*
 
+#### Bounding Box Size Analysis
+![Bounding Box Sizes](docs/bbox_size_distribution.png)
+*Bounding box size distribution showing multi-scale detection challenges (100px² to 200,000px²)*
+
 #### Sample Dataset Examples
+**Note**: Sample images with bounding box annotations are generated in the `samples/` directory during analysis.
 
-| Category | Example |
-|----------|---------|
-| **Basic Complexity** | ![Basic Sample](docs/sample_basic_complexity.jpg) |
-| **Extreme Density** | ![Extreme Density](docs/sample_extreme_density.jpg) |
-| **Tiny Objects** | ![Tiny Objects](docs/sample_tiny_objects.jpg) |
-| **Dominant Class (Car)** | ![Car Sample](docs/sample_class_car.jpg) |
-| **Rare Class (Train)** | ![Train Sample](docs/sample_class_train.jpg) |
+Key sample categories include:
+- **Basic Complexity** (10 samples): Simple to complex scene variations
+- **Extreme Density** (10 samples): High object count scenarios (60-70 objects)
+- **BBox Size Extremes** (10 samples): Tiny to huge object variations
+- **Class Representatives** (10 samples per class): Individual class examples
+- **Diversity Samples** (10 samples): Multi-class scenes (6+ classes)
+- **Occlusion Samples** (10 samples): Overlapping objects
+- **Co-occurrence Patterns** (7 samples): Class relationship examples
 
-*All samples include bounding box annotations with class labels*
+**Interactive Dashboard**: For real-time exploration, run `streamlit run streamlit_dashboard.py` and access http://localhost:8501
 
 ## Key Analysis Findings Summary
 
