@@ -79,7 +79,7 @@ def move_unlabeled_images(dataset_path, split='train'):
 
 if __name__ == "__main__":
     # Dataset path
-    dataset_path = "/Users/ayushsoral/Desktop/code/anusha_assmt/assignment_data_bdd/data_analysis/data/bdd100k_yolo_dataset"
+    dataset_path = "D:\VLM\bdd100k-object-detection\assignment_data_bdd\phase1_data_analysis\data\bdd100k_yolo_dataset"
     
     print("\n" + "="*60)
     print("Moving unlabeled images to separate folder")
