@@ -423,8 +423,8 @@ def create_bdd100k_dataloader(
 
 
 def demo_dataset_loading(
-    images_dir: str = "../../data/bdd100k_yolo_dataset/train/images",
-    labels_path: str = "../../phase1_data_analysis/data/labels/bdd100k_labels_images_train.json",
+    images_dir: str = "../phase1_data_analysis/data/bdd100k_yolo_dataset/train/images",
+    labels_path: str = "../phase1_data_analysis/data/labels/bdd100k_labels_images_train.json",
     subset_size: int = 5
 ):
     """

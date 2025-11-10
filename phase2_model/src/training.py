@@ -302,8 +302,8 @@ def train_yolov8(
         
         # Define source paths (adjust these based on your actual data structure)
         script_dir = Path(__file__).resolve().parent
-        source_images_dir = script_dir.parent.parent / "data" / "bdd100k_yolo_dataset" / "train" / "images"
-        source_labels_dir = script_dir.parent.parent / "data" / "bdd100k_yolo_dataset" / "train" / "labels"
+        source_images_dir = script_dir.parent.parent / "phase1_data_analysis" / "data" / "bdd100k_yolo_dataset" / "train" / "images"
+        source_labels_dir = script_dir.parent.parent / "phase1_data_analysis" / "data" / "bdd100k_yolo_dataset" / "train" / "labels"
         subset_dir = script_dir.parent / "outputs" / f"subset_{subset_size}"
         subset_yaml_path = script_dir.parent / "configs" / f"subset_{subset_size}.yaml"
         
@@ -425,7 +425,7 @@ def train_yolov8(
 def train_yolov8_with_custom_loader(
     model_path: str = 'yolov8s.pt',
     images_dir: str = '../subset_300/images',
-    labels_path: str = '../../phase1_data_analysis/data/labels/bdd100k_labels_images_train.json',
+    labels_path: str = '../phase1_data_analysis/data/labels/bdd100k_labels_images_train.json',
     subset_size: int = 50,
     epochs: int = 1,
     batch_size: int = 4,
@@ -771,7 +771,7 @@ def main():
                         default='../subset_300/images',
                         help='Directory containing training images (for custom loader)')
     parser.add_argument('--labels-path', type=str,
-                        default='../../phase1_data_analysis/data/labels/bdd100k_labels_images_train.json',
+                        default='../phase1_data_analysis/data/labels/bdd100k_labels_images_train.json',
                         help='Path to BDD100K JSON labels (for custom loader)')
     parser.add_argument('--subset-size', type=int, default=50,
                         help='Number of images to use for custom loader training')

@@ -64,7 +64,7 @@ class BDD100kInference:
         self,
         image_path: str,
         save_visualization: bool = True,
-        output_dir: str = '../outputs/inference_samples'
+        output_dir: str = 'outputs/inference_samples'
     ) -> Dict:
         """
         Run inference on a single image.
@@ -125,7 +125,7 @@ class BDD100kInference:
     def predict_batch(
         self,
         image_paths: List[str],
-        output_dir: str = '../outputs/inference_samples',
+        output_dir: str = 'outputs/inference_samples',
         save_visualizations: bool = True,
         save_json: bool = True
     ) -> List[Dict]:
@@ -279,7 +279,7 @@ def main():
                         help='Batch images pattern (e.g., "images/*.jpg")')
     parser.add_argument('--benchmark', type=str,
                         help='Image path for speed benchmark')
-    parser.add_argument('--output', type=str, default='../outputs/inference_samples',
+    parser.add_argument('--output', type=str, default='outputs/inference_samples',
                         help='Output directory')
     parser.add_argument('--conf', type=float, default=0.25,
                         help='Confidence threshold')

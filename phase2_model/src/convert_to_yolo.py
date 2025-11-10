@@ -132,10 +132,10 @@ def main():
     parser = argparse.ArgumentParser(
         description='Convert BDD100K labels to YOLO format')
     parser.add_argument('--data-root', type=str,
-                        default='../../phase1_data_analysis/data',
+                        default='../phase1_data_analysis/data',
                         help='Root directory of BDD100K JSON labels')
     parser.add_argument('--output-root', type=str,
-                        default='../../data/bdd100k_labels_yolo',
+                        default='../phase1_data_analysis/data/bdd100k_yolo_dataset',
                         help='Root directory for YOLO format labels')
 
     args = parser.parse_args()
@@ -146,7 +146,7 @@ def main():
     # Convert train set
     train_json = data_root / 'labels/bdd100k_labels_images_train.json'
     print("-----------------------------------------", train_json)
-    train_output = output_root / 'train'
+    train_output = output_root / 'train' / 'labels'
 
     if train_json.exists():
         convert_bdd_to_yolo(
@@ -159,7 +159,7 @@ def main():
 
     # Convert val set
     val_json = data_root / 'labels/bdd100k_labels_images_val.json'
-    val_output = output_root / 'val'
+    val_output = output_root / 'val' / 'labels'
 
     if val_json.exists():
         convert_bdd_to_yolo(

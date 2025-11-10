@@ -88,10 +88,9 @@ bdd100k-object-detection--Bosch/
 │       └── labels/                              # Place JSON files here
 │           ├── bdd100k_labels_images_train.json # Training annotations
 │           └── bdd100k_labels_images_val.json   # Validation annotations
-└── data/
-    └── bdd100k_yolo_dataset/                          # Place image folders here
-        ├── train/                               # ~70K training images (.jpg)
-        └── val/                                 # ~10K validation images (.jpg)
+        └── bdd100k_yolo_dataset/                          # Place image folders 
+            ├── train/images                               # ~70K training images (.jpg)
+            └── val/images                                 # ~10K validation images (.jpg)
 ```
 
 **Step 3: Run YOLO Format Conversion**
