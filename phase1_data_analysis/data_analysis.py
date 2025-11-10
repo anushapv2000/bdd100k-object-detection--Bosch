@@ -7,14 +7,20 @@ import json
 import os
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
-
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+from collections import Counter
+import warnings
+warnings.filterwarnings('ignore')
 
 # Configuration
 CONFIG = {
     "TRAIN_LABELS": "data/labels/bdd100k_labels_images_train.json",
     "VAL_LABELS": "data/labels/bdd100k_labels_images_val.json",
-    "TRAIN_IMAGES": "../data/bdd100k_yolo_dataset/train/images/",
-    "VAL_IMAGES": "../data/bdd100k_yolo_dataset/val/images/",
+    "TRAIN_IMAGES": "data/bdd100k_yolo_dataset/train/images/",
+    "VAL_IMAGES": "data/bdd100k_yolo_dataset/val/images/",
     "OUTPUT_DIR": "output_samples",
     "MIN_DENSE_OBJECTS": 60,
     "MAX_DENSE_OBJECTS": 70,
@@ -25,6 +31,10 @@ CONFIG = {
     "SMALL_BBOX_THRESHOLD": 1000,
     "LARGE_BBOX_THRESHOLD": 100000,
 }
+
+# Create docs directory for saving visualizations
+DOCS_DIR = Path('docs')
+DOCS_DIR.mkdir(exist_ok=True)
 
 
 def load_labels(labels_path):
@@ -618,15 +628,140 @@ def generate_sample_visualizations(train_labels):
     create_organized_readme_files(organized_dir)
 
 
+def save_class_distribution_charts(train_class_counts, val_class_counts):
+    """Save class distribution visualizations"""
+    print("\nGenerating class distribution charts...")
+    
+    # 1. Standard Scale Chart
+    fig, ax = plt.subplots(figsize=(14, 7))
+    x = np.arange(len(train_class_counts))
+    width = 0.35
+    
+    ax.bar(x - width/2, list(train_class_counts.values()), width, label='Training', alpha=0.8, color='#2E86AB')
+    ax.bar(x + width/2, list(val_class_counts.values()), width, label='Validation', alpha=0.8, color='#A23B72')
+    
+    ax.set_xlabel('Classes', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Number of Annotations', fontsize=12, fontweight='bold')
+    ax.set_title('Class Distribution: Training vs Validation', fontsize=14, fontweight='bold', pad=20)
+    ax.set_xticks(x)
+    ax.set_xticklabels(train_class_counts.keys(), rotation=45, ha='right')
+    ax.legend(fontsize=11)
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    
+    plt.tight_layout()
+    plt.savefig(DOCS_DIR / 'class_distribution_chart.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  ✓ Saved class_distribution_chart.png")
+    
+    # 2. Log Scale Chart
+    fig, ax = plt.subplots(figsize=(14, 7))
+    ax.bar(x - width/2, list(train_class_counts.values()), width, label='Training', alpha=0.8, color='#2E86AB')
+    ax.bar(x + width/2, list(val_class_counts.values()), width, label='Validation', alpha=0.8, color='#A23B72')
+    
+    ax.set_xlabel('Classes', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Number of Annotations (Log Scale)', fontsize=12, fontweight='bold')
+    ax.set_title('Class Distribution (Log Scale): Better Visibility for Rare Classes', fontsize=14, fontweight='bold', pad=20)
+    ax.set_xticks(x)
+    ax.set_xticklabels(train_class_counts.keys(), rotation=45, ha='right')
+    ax.set_yscale('log')
+    ax.legend(fontsize=11)
+    ax.grid(axis='y', alpha=0.3, linestyle='--', which='both')
+    
+    plt.tight_layout()
+    plt.savefig(DOCS_DIR / 'class_distribution_log_chart.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  ✓ Saved class_distribution_log_chart.png")
+    
+    # 3. Percentage Distribution
+    total_train = sum(train_class_counts.values())
+    train_percentages = {k: (v/total_train)*100 for k, v in train_class_counts.items()}
+    
+    fig, ax = plt.subplots(figsize=(14, 7))
+    colors_map = plt.cm.viridis(np.linspace(0, 1, len(train_percentages)))
+    bars = ax.bar(train_percentages.keys(), train_percentages.values(), alpha=0.8, color=colors_map)
+    
+    ax.set_xlabel('Classes', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Percentage (%)', fontsize=12, fontweight='bold')
+    ax.set_title('Class Distribution: Percentage View', fontsize=14, fontweight='bold', pad=20)
+    plt.xticks(rotation=45, ha='right')
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    
+    # Add percentage labels on bars
+    for bar in bars:
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height:.1f}%', ha='center', va='bottom', fontsize=9)
+    
+    plt.tight_layout()
+    plt.savefig(DOCS_DIR / 'class_distribution_percentage.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  ✓ Saved class_distribution_percentage.png")
+
+
+def save_object_complexity_chart(objects_per_image_list):
+    """Save objects per image histogram"""
+    print("\nGenerating object complexity chart...")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    ax.hist(objects_per_image_list, bins=30, alpha=0.7, color='#F18F01', edgecolor='black')
+    ax.axvline(np.mean(objects_per_image_list), color='red', linestyle='--', 
+               linewidth=2, label=f'Mean: {np.mean(objects_per_image_list):.1f}')
+    ax.axvline(np.median(objects_per_image_list), color='green', linestyle='--', 
+               linewidth=2, label=f'Median: {np.median(objects_per_image_list):.1f}')
+    
+    ax.set_xlabel('Number of Objects per Image', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
+    ax.set_title('Object Density Distribution: Objects per Image', fontsize=14, fontweight='bold', pad=20)
+    ax.legend(fontsize=11)
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    
+    plt.tight_layout()
+    plt.savefig(DOCS_DIR / 'objects_per_image_chart.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  ✓ Saved objects_per_image_chart.png")
+
+
+def save_bbox_size_chart(bbox_sizes):
+    """Save bounding box size distribution"""
+    print("\nGenerating bounding box size chart...")
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Linear scale
+    ax1.hist(bbox_sizes, bins=50, alpha=0.7, color='#06A77D', edgecolor='black')
+    ax1.set_xlabel('Bounding Box Area (px²)', fontsize=11, fontweight='bold')
+    ax1.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+    ax1.set_title('Bounding Box Size Distribution', fontsize=12, fontweight='bold')
+    ax1.grid(axis='y', alpha=0.3, linestyle='--')
+    
+    # Log scale
+    ax2.hist(bbox_sizes, bins=50, alpha=0.7, color='#06A77D', edgecolor='black')
+    ax2.set_xlabel('Bounding Box Area (px²)', fontsize=11, fontweight='bold')
+    ax2.set_ylabel('Frequency (Log Scale)', fontsize=11, fontweight='bold')
+    ax2.set_title('Bounding Box Size Distribution (Log Scale)', fontsize=12, fontweight='bold')
+    ax2.set_yscale('log')
+    ax2.grid(axis='y', alpha=0.3, linestyle='--', which='both')
+    
+    plt.tight_layout()
+    plt.savefig(DOCS_DIR / 'bbox_size_distribution.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  ✓ Saved bbox_size_distribution.png")
+
+
 def main():
     """Main analysis function."""
     try:
-        print("Loading BDD100k datasets...")
+        print("="*60)
+        print("BDD100K DATASET ANALYSIS")
+        print("="*60)
+        print("\nLoading BDD100k datasets...")
         train_labels = load_labels(CONFIG["TRAIN_LABELS"])
         val_labels = load_labels(CONFIG["VAL_LABELS"])
 
         # Basic statistics
         train_class_counts = analyze_class_distribution(train_labels)
+        val_class_counts = analyze_class_distribution(val_labels)
 
         print(f"\nDataset Summary:")
         print(f"- Training samples: {sum(train_class_counts.values()):,}")
@@ -634,36 +769,61 @@ def main():
         print(f"- Validation samples: {len(val_labels):,}")
 
         # Analysis pipeline
-        analyses = [
-            (
-                "Train/Validation Split Analysis",
-                lambda: analyze_train_val_split(train_labels, val_labels),
-            ),
-            ("Anomaly Detection", lambda: identify_anomalies(train_class_counts)),
-            ("Bounding Box Analysis", lambda: analyze_bbox_sizes(train_labels)),
-            (
-                "Objects Per Image Analysis",
-                lambda: analyze_objects_per_image(train_labels),
-            ),
-            (
-                "Sample Generation & Organization",
-                lambda: generate_sample_visualizations(train_labels),
-            ),
-        ]
+        print(f"\n{'=' * 60}")
+        print("TRAIN/VALIDATION SPLIT ANALYSIS")
+        print(f"{'=' * 60}")
+        analyze_train_val_split(train_labels, val_labels)
 
-        for title, func in analyses:
-            print(f"\n{'=' * 60}")
-            print(f"{title.upper()}")
-            print(f"{'=' * 60}")
-            func()
+        print(f"\n{'=' * 60}")
+        print("ANOMALY DETECTION")
+        print(f"{'=' * 60}")
+        identify_anomalies(train_class_counts)
+
+        print(f"\n{'=' * 60}")
+        print("BOUNDING BOX ANALYSIS")
+        print(f"{'=' * 60}")
+        bbox_df = analyze_bbox_sizes(train_labels)
+
+        print(f"\n{'=' * 60}")
+        print("OBJECTS PER IMAGE ANALYSIS")
+        print(f"{'=' * 60}")
+        obj_df = analyze_objects_per_image(train_labels)
+
+        # Save visualizations
+        print("\n" + "="*60)
+        print("GENERATING DOCUMENTATION VISUALIZATIONS")
+        print("="*60)
+        
+        # Extract data for visualizations
+        objects_per_image_list = obj_df["object_count"].tolist()
+        bbox_sizes = bbox_df["area"].tolist()
+        
+        # Save all charts
+        save_class_distribution_charts(train_class_counts, val_class_counts)
+        save_object_complexity_chart(objects_per_image_list)
+        save_bbox_size_chart(bbox_sizes)
+        
+        print(f"\n✓ All visualizations saved to '{DOCS_DIR}/' directory")
+        print("\nGenerated files:")
+        for file in sorted(DOCS_DIR.glob('*.png')):
+            print(f"  - {file.name}")
+
+        # Generate sample visualizations
+        print(f"\n{'=' * 60}")
+        print("SAMPLE GENERATION & ORGANIZATION")
+        print(f"{'=' * 60}")
+        generate_sample_visualizations(train_labels)
 
         print(f"\n{'=' * 60}")
         print("ANALYSIS COMPLETE")
         print(f"{'=' * 60}")
-        print(f"Check '{CONFIG['OUTPUT_DIR']}/organized_samples/' for visualizations.")
+        print(f"✓ Documentation images: '{DOCS_DIR}/'")
+        print(f"✓ Sample images: '{CONFIG['OUTPUT_DIR']}/organized_samples/'")
 
     except Exception as e:
-        print(f"Error during analysis: {e}")
+        print(f"\n❌ Error during analysis: {e}")
+        import traceback
+        traceback.print_exc()
         raise
 
 
