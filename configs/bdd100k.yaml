@@ -2,7 +2,7 @@
 # This file is used by YOLOv8 for training and validation
 
 # Dataset root (absolute path)
-path: D:\VLM\bdd100k-object-detection\assignment_data_bdd\data_analysis\data
+path: D:\VLM\bdd100k-object-detection\assignment_data_bdd\phase1_data_analysis\data
 
 # Relative paths from 'path' above
 # For YOLO format, labels should be in parallel structure: images/... and labels/...
