@@ -96,6 +96,7 @@ bdd100k-object-detection--Bosch/
 **Step 3: Run YOLO Format Conversion**
 ```bash
 cd phase2_model
+Update the path in configs/bdd100k.yaml
 python src/convert_to_yolo.py
 ```
 
@@ -207,7 +208,8 @@ python src/training.py --epochs 1 --batch 4 --device cpu --create-subset --subse
 # Alternative training options
 python src/training.py --epochs 1 --batch 4 --device cpu                              # Full dataset (slower)
 python src/training.py --epochs 1 --batch 4 --device cpu --use-custom-loader         # Custom PyTorch loader
-python src/training.py --epochs 1 --batch 4 --device cpu --create-subset --subset-yolo-size 50  # Larger subset
+# Validate on 50 random validation images
+python src/training.py --validate --val-subset --val-subset-size 50 --model ../outputs/training_logs/yolov8s_bdd100k_demo/weights/best.pt
 ```
 
 ### 4. Model Selection Analysis
