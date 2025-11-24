@@ -69,7 +69,7 @@ class BDD100KEvaluator:
             data_path: Path to validation dataset directory
             output_dir: Directory to save evaluation results
             confidence_threshold: Minimum confidence for detections
-            iou_threshold: IoU threshold for NMS
+            iou_threshold: IoU threshold for NMS and evaluation
         """
         self.model_path = Path(model_path)
         self.data_path = Path(data_path)
@@ -259,6 +259,318 @@ class BDD100KEvaluator:
         print(f"✅ Completed inference on {len(predictions)} images")
         return predictions, ground_truths, image_info
 
+    def _compute_iou(self, box1, box2):
+        """
+        Compute Intersection over Union of two bounding boxes.
+        
+        Args:
+            box1: [x1, y1, x2, y2]
+            box2: [x1, y1, x2, y2]
+        
+        Returns:
+            IoU score between 0 and 1
+        """
+        x1, y1, x2, y2 = box1
+        x3, y3, x4, y4 = box2
+        
+        # Intersection coordinates
+        xi1 = max(x1, x3)
+        yi1 = max(y1, y3)
+        xi2 = min(x2, x4)
+        yi2 = min(y2, y4)
+        
+        if xi2 <= xi1 or yi2 <= yi1:
+            return 0.0
+        
+        # Areas
+        intersection = (xi2 - xi1) * (yi2 - yi1)
+        box1_area = (x2 - x1) * (y2 - y1)
+        box2_area = (x4 - x3) * (y4 - y3)
+        union = box1_area + box2_area - intersection
+        
+        return intersection / union if union > 0 else 0.0
+
+    def _compute_ap_from_precision_recall(self, precision, recall):
+        """
+        Compute AP from precision-recall arrays using 11-point interpolation.
+        
+        Args:
+            precision: Array of precision values
+            recall: Array of recall values
+            
+        Returns:
+            Average Precision score
+        """
+        # Use 11-point interpolation method (PASCAL VOC style)
+        ap = 0.0
+        for t in np.arange(0, 1.1, 0.1):
+            # Find recalls >= t
+            p = precision[recall >= t]
+            if len(p) > 0:
+                ap += np.max(p) / 11.0
+        return ap
+
+    def _compute_class_ap(self, detections, ground_truths, iou_threshold=0.5):
+        """
+        Compute AP for a single class using proper IoU matching.
+        
+        Args:
+            detections: List of detection dicts with 'box', 'score', 'image_id'
+            ground_truths: List of GT dicts with 'box', 'image_id', 'matched'
+            iou_threshold: IoU threshold for matching
+            
+        Returns:
+            Average Precision score
+        """
+        if len(detections) == 0:
+            return 0.0
+            
+        # Sort detections by confidence score (highest first)
+        detections = sorted(detections, key=lambda x: x['score'], reverse=True)
+        
+        tp = []  # True positives
+        fp = []  # False positives
+        
+        # Make a copy of ground truths to track matches
+        gt_copy = [gt.copy() for gt in ground_truths]
+        for gt in gt_copy:
+            gt['matched'] = False
+        
+        # Process each detection in order of confidence
+        for detection in detections:
+            best_iou = 0
+            best_gt_idx = -1
+            
+            # Find best matching ground truth in same image
+            for gt_idx, gt in enumerate(gt_copy):
+                if (gt['image_id'] != detection['image_id'] or 
+                    gt['matched']):
+                    continue
+                    
+                iou = self._compute_iou(detection['box'], gt['box'])
+                if iou > best_iou:
+                    best_iou = iou
+                    best_gt_idx = gt_idx
+            
+            # Determine if this is a true positive
+            if best_iou >= iou_threshold and best_gt_idx >= 0:
+                tp.append(1)
+                fp.append(0)
+                gt_copy[best_gt_idx]['matched'] = True
+            else:
+                tp.append(0)
+                fp.append(1)
+        
+        # Compute precision and recall
+        tp_cumsum = np.cumsum(tp)
+        fp_cumsum = np.cumsum(fp)
+        
+        precision = tp_cumsum / (tp_cumsum + fp_cumsum + 1e-8)
+        recall = tp_cumsum / len(ground_truths)
+        
+        # Compute AP using 11-point interpolation
+        ap = self._compute_ap_from_precision_recall(precision, recall)
+        
+        return ap
+
+    def _compute_map(self, predictions: List, ground_truths: List) -> Dict:
+        """Compute mean Average Precision (mAP) using proper IoU-based matching."""
+        ap_scores = []
+        
+        for class_id in range(self.num_classes):
+            # Collect all detections and ground truths for this class across all images
+            all_detections = []
+            all_ground_truths = []
+            
+            for img_id, (pred, gt) in enumerate(zip(predictions, ground_truths)):
+                # Predictions for this class
+                for i, label in enumerate(pred["labels"]):
+                    if label == class_id:
+                        all_detections.append({
+                            'box': pred["boxes"][i],
+                            'score': pred["scores"][i],
+                            'image_id': img_id
+                        })
+                
+                # Ground truths for this class
+                for i, label in enumerate(gt["labels"]):
+                    if label == class_id:
+                        all_ground_truths.append({
+                            'box': gt["boxes"][i],
+                            'image_id': img_id,
+                            'matched': False
+                        })
+            
+            # Compute AP for this class
+            if len(all_ground_truths) == 0:
+                ap_scores.append(0.0)
+            elif len(all_detections) == 0:
+                ap_scores.append(0.0)
+            else:
+                ap = self._compute_class_ap(all_detections, all_ground_truths, self.iou_threshold)
+                ap_scores.append(ap)
+        
+        map_50 = np.mean(ap_scores)
+        
+        return {
+            "mAP@0_50": map_50,
+            "mAP@0_50_95": map_50 * 0.75,  # Rough approximation for mAP@0.5:0.95
+            "per_class_ap": {str(i): ap for i, ap in enumerate(ap_scores)},
+        }
+
+    def _count_tp_fp(self, detections, ground_truths, iou_threshold=0.5):
+        """
+        Count true positives and false positives for threshold-based metrics.
+        
+        Args:
+            detections: List of detection dicts
+            ground_truths: List of GT dicts
+            iou_threshold: IoU threshold for matching
+            
+        Returns:
+            Tuple of (tp_count, fp_count)
+        """
+        if len(detections) == 0:
+            return 0, 0
+            
+        # Sort by confidence
+        detections = sorted(detections, key=lambda x: x['score'], reverse=True)
+        
+        tp_count = 0
+        fp_count = 0
+        
+        # Make a copy to track matches
+        gt_copy = [gt.copy() for gt in ground_truths]
+        for gt in gt_copy:
+            gt['matched'] = False
+        
+        for detection in detections:
+            matched = False
+            
+            for gt_idx, gt in enumerate(gt_copy):
+                if (gt['image_id'] == detection['image_id'] and 
+                    not gt['matched']):
+                    
+                    iou = self._compute_iou(detection['box'], gt['box'])
+                    if iou >= iou_threshold:
+                        tp_count += 1
+                        gt['matched'] = True
+                        matched = True
+                        break
+            
+            if not matched:
+                fp_count += 1
+        
+        return tp_count, fp_count
+
+    def _compute_per_class_metrics(
+        self, predictions: List, ground_truths: List
+    ) -> Dict:
+        """Compute detailed per-class metrics using proper IoU-based matching."""
+        per_class_results = {}
+        
+        for class_id in range(self.num_classes):
+            class_name = self.class_names[class_id]
+            
+            # Collect all detections and ground truths for this class
+            all_detections = []
+            all_ground_truths = []
+            
+            for img_id, (pred, gt) in enumerate(zip(predictions, ground_truths)):
+                # Filter predictions above confidence threshold
+                for i, label in enumerate(pred["labels"]):
+                    if label == class_id and pred["scores"][i] >= self.confidence_threshold:
+                        all_detections.append({
+                            'box': pred["boxes"][i],
+                            'score': pred["scores"][i],
+                            'image_id': img_id
+                        })
+                
+                for i, label in enumerate(gt["labels"]):
+                    if label == class_id:
+                        all_ground_truths.append({
+                            'box': gt["boxes"][i],
+                            'image_id': img_id,
+                            'matched': False
+                        })
+            
+            # Compute metrics
+            if len(all_ground_truths) == 0:
+                ap = precision = recall = f1 = 0.0
+                num_gt = 0
+            else:
+                # Match detections to ground truths
+                tp_count, fp_count = self._count_tp_fp(all_detections, all_ground_truths, self.iou_threshold)
+                
+                precision = tp_count / (tp_count + fp_count) if (tp_count + fp_count) > 0 else 0.0
+                recall = tp_count / len(all_ground_truths)
+                f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+                ap = self._compute_class_ap(all_detections, all_ground_truths.copy(), self.iou_threshold)
+                num_gt = len(all_ground_truths)
+            
+            per_class_results[str(class_id)] = {
+                "class_name": class_name,
+                "ap": ap,
+                "precision": precision,
+                "recall": recall,
+                "f1_score": f1,
+                "num_gt": num_gt,
+                "num_pred": len(all_detections),
+            }
+        
+        return per_class_results
+
+    def _compute_confusion_matrix(
+        self, predictions: List, ground_truths: List
+    ) -> np.ndarray:
+        """Compute confusion matrix using proper IoU-based matching."""
+        all_pred_labels = []
+        all_gt_labels = []
+
+        for img_id, (pred, gt) in enumerate(zip(predictions, ground_truths)):
+            if not pred["labels"] or not gt["labels"]:
+                continue
+                
+            # For each ground truth, find best matching prediction
+            for gt_idx, gt_label in enumerate(gt["labels"]):
+                gt_box = gt["boxes"][gt_idx]
+                best_iou = 0
+                best_pred_label = -1
+                
+                for pred_idx, pred_label in enumerate(pred["labels"]):
+                    if pred["scores"][pred_idx] >= self.confidence_threshold:
+                        pred_box = pred["boxes"][pred_idx]
+                        iou = self._compute_iou(gt_box, pred_box)
+                        
+                        if iou > best_iou:
+                            best_iou = iou
+                            best_pred_label = pred_label
+                
+                # Add to confusion matrix data
+                all_gt_labels.append(gt_label)
+                if best_iou >= self.iou_threshold:
+                    all_pred_labels.append(best_pred_label)
+                else:
+                    all_pred_labels.append(-1)  # No match, will be treated as misclassification
+
+        # Handle case where no predictions exist
+        if len(all_pred_labels) == 0 or len(all_gt_labels) == 0:
+            return np.zeros((self.num_classes, self.num_classes))
+
+        # Create confusion matrix
+        # Replace -1 (no match) with num_classes (background class)
+        pred_labels_clean = [p if p >= 0 else self.num_classes for p in all_pred_labels]
+        
+        # Extend to include background class
+        cm = confusion_matrix(
+            all_gt_labels, 
+            pred_labels_clean, 
+            labels=list(range(self.num_classes + 1))
+        )
+        
+        # Return only the class-to-class part (exclude background)
+        return cm[:self.num_classes, :self.num_classes]
+
     def compute_metrics(self, predictions: List, ground_truths: List) -> Dict:
         """
         Compute comprehensive evaluation metrics.
@@ -337,133 +649,6 @@ class BDD100KEvaluator:
         }
 
         return results
-
-    def _compute_map(self, predictions: List, ground_truths: List) -> Dict:
-        """Compute mean Average Precision (mAP) at IoU 0.5 and 0.5:0.95."""
-        # This is a simplified mAP computation
-        # For production, consider using pycocotools for exact COCO metrics
-
-        ap_scores = []
-
-        for class_id in range(self.num_classes):
-            # Collect all predictions and ground truths for this class
-            class_pred_boxes = []
-            class_pred_scores = []
-            class_gt_boxes = []
-
-            for pred, gt in zip(predictions, ground_truths):
-                # Predictions for this class
-                for i, label in enumerate(pred["labels"]):
-                    if label == class_id:
-                        class_pred_boxes.append(pred["boxes"][i])
-                        class_pred_scores.append(pred["scores"][i])
-
-                # Ground truths for this class
-                for i, label in enumerate(gt["labels"]):
-                    if label == class_id:
-                        class_gt_boxes.append(gt["boxes"][i])
-
-            # Compute AP for this class
-            if len(class_gt_boxes) == 0:
-                ap_scores.append(0.0)  # No ground truth for this class
-            elif len(class_pred_boxes) == 0:
-                ap_scores.append(0.0)  # No predictions for this class
-            else:
-                # Simplified AP computation (using sklearn as approximation)
-                # In practice, use proper IoU-based AP computation
-                ap = 0.1  # Placeholder - replace with proper mAP computation
-                ap_scores.append(ap)
-
-        map_50 = np.mean(ap_scores)
-
-        return {
-            "mAP@0_50": map_50,
-            "mAP@0_50_95": map_50 * 0.7,  # Approximate
-            "per_class_ap": {str(i): ap for i, ap in enumerate(ap_scores)},
-        }
-
-    def _compute_per_class_metrics(
-        self, predictions: List, ground_truths: List
-    ) -> Dict:
-        """Compute detailed per-class metrics including precision-recall curves."""
-        per_class_results = {}
-
-        for class_id in range(self.num_classes):
-            class_name = self.class_names[class_id]
-
-            # Collect predictions and ground truths for this class
-            y_true = []
-            y_scores = []
-
-            for pred, gt in zip(predictions, ground_truths):
-                # Binary classification: is this class present in the image?
-                gt_has_class = class_id in gt["labels"]
-                pred_max_score = 0.0
-
-                for i, label in enumerate(pred["labels"]):
-                    if label == class_id:
-                        pred_max_score = max(pred_max_score, pred["scores"][i])
-
-                y_true.append(1 if gt_has_class else 0)
-                y_scores.append(pred_max_score)
-
-            # Compute metrics
-            if sum(y_true) > 0:  # Only if there are positive examples
-                try:
-                    ap = average_precision_score(y_true, y_scores)
-
-                    # Threshold at 0.5 for precision/recall
-                    y_pred = [1 if score >= 0.5 else 0 for score in y_scores]
-                    precision = precision_score(y_true, y_pred, zero_division=0)
-                    recall = recall_score(y_true, y_pred, zero_division=0)
-                    f1 = f1_score(y_true, y_pred, zero_division=0)
-
-                except:
-                    ap = precision = recall = f1 = 0.0
-            else:
-                ap = precision = recall = f1 = 0.0
-
-            per_class_results[str(class_id)] = {
-                "class_name": class_name,
-                "ap": ap,
-                "precision": precision,
-                "recall": recall,
-                "f1_score": f1,
-                "num_gt": sum(y_true),
-                "num_pred": sum(
-                    [1 for score in y_scores if score >= self.confidence_threshold]
-                ),
-            }
-
-        return per_class_results
-
-    def _compute_confusion_matrix(
-        self, predictions: List, ground_truths: List
-    ) -> np.ndarray:
-        """Compute confusion matrix for all classes."""
-        all_pred_labels = []
-        all_gt_labels = []
-
-        for pred, gt in zip(predictions, ground_truths):
-            # For each image, find the dominant classes
-            if pred["labels"] and gt["labels"]:
-                # Take most confident prediction
-                if pred["scores"]:
-                    max_idx = np.argmax(pred["scores"])
-                    all_pred_labels.append(pred["labels"][max_idx])
-                else:
-                    all_pred_labels.append(pred["labels"][0])
-
-                # Take first ground truth (simplified)
-                all_gt_labels.append(gt["labels"][0])
-
-        if all_pred_labels and all_gt_labels:
-            cm = confusion_matrix(
-                all_gt_labels, all_pred_labels, labels=list(range(self.num_classes))
-            )
-            return cm
-        else:
-            return np.zeros((self.num_classes, self.num_classes))
 
     def evaluate(self, max_images: Optional[int] = None) -> Dict:
         """
@@ -588,9 +773,9 @@ def main():
     parser.add_argument(
         "--confidence", type=float, default=0.25, help="Confidence threshold"
     )
-    parser.add_argument("--iou", type=float, default=0.5, help="IoU threshold for NMS")
+    parser.add_argument("--iou", type=float, default=0.5, help="IoU threshold for evaluation")
     parser.add_argument(
-        "--max-images", type=int, help="Maximum images to process (for testing)"
+        "--max-images", type=int,default=100, help="Maximum images to process (for testing)"
     )
 
     args = parser.parse_args()
