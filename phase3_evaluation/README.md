@@ -58,10 +58,10 @@ phase3_evaluation/
 pip install -r src/requirements.txt
 
 # Run complete evaluation (single command)
-python src/main.py --model-path /path/to/model.pt --data-path /path/to/validation/data --output-dir results/
+python src/main.py --model-path ../outputs/training_logs/yolov8s_bdd100k_demo/weights/best.pt  --data-path ../phase1_data_analysis/data/bdd100k_yolo_dataset/val/ --output-dir results/
 
 # Or run individual components
-python src/evaluator.py --model-path model.pt --data-path data/ --output results/eval.json
+python src/evaluator.py --model-path ../outputs/training_logs/yolov8s_bdd100k_demo/weights/best.pt --data-path ../phase1_data_analysis/data/bdd100k_yolo_dataset/val/ --output results/eval.json
 python src/visualizer.py --results results/eval.json --output results/plots/
 python src/analyzer.py --results results/eval.json --output results/analysis.md
 ```
