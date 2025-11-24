@@ -1,12 +1,5 @@
 """
 Optimized Training Pipeline for YOLOv8 on BDD100k
-
-Consolidated training pipeline with both demo (1 epoch) and full training capabilities.
-Removed redundancy and improved code readability. Includes custom dataset loader integration.
-
-"""
-"""
-Optimized Training Pipeline for YOLOv8 on BDD100k
 Consolidated training with demo/full capabilities and custom loader support.
 Author: Bosch Assignment - Phase 2
 Date: November 2025
@@ -79,7 +72,7 @@ def create_yolo_subset(source_images_dir: str, source_labels_dir: str,
                        val_split_ratio: float = 0.2) -> Dict[str, Any]:
     """Create YOLO format subset with optional train/val split."""
     
-    print(f"🔧 Creating YOLO subset: {subset_size} images")
+    print(f"Creating YOLO subset: {subset_size} images")
     print(f"   Target: {target_dir}")
     if create_val_split:
         print(f"   Val split: {val_split_ratio * 100:.0f}%")
@@ -91,7 +84,7 @@ def create_yolo_subset(source_images_dir: str, source_labels_dir: str,
     for p, name in [(src_img_path, "images"), (src_lbl_path, "labels")]:
         valid, err = validate_path(p, "directory")
         if not valid:
-            print(f"❌ {err}")
+            print(f"ERROR: {err}")
             return {"success": False, "error": err}
     
     # Get all images
@@ -101,7 +94,7 @@ def create_yolo_subset(source_images_dir: str, source_labels_dir: str,
     
     if not all_images:
         err = f"No images found in {source_images_dir}"
-        print(f"❌ {err}")
+        print(f"ERROR: {err}")
         return {"success": False, "error": err}
     
     print(f"   Found: {len(all_images)} images")
@@ -142,7 +135,7 @@ def create_yolo_subset(source_images_dir: str, source_labels_dir: str,
             results[split][0] += img_cnt
             results[split][1] += lbl_cnt
     
-    print(f"✅ Subset created:")
+    print(f"Subset created:")
     if results["train"][0]:
         print(f"   Train: {results['train'][0]} images, {results['train'][1]} labels")
     if results["val"][0]:
@@ -179,7 +172,7 @@ def create_subset_yaml(subset_dir: str, output_yaml: str,
         for cid, cname in classes.items():
             f.write(f"  {cid}: {cname}\n")
     
-    print(f"✅ YAML created: {output}")
+    print(f"YAML created: {output}")
     return {"success": True, "yaml_path": str(output)}
 
 
@@ -205,7 +198,7 @@ def train_yolov8(model_path: str = 'yolov8s.pt',
     
     # Create subset if requested
     if create_subset:
-        print(f"\n🔧 Creating training subset ({subset_size} images)")
+        print(f"\nCreating training subset ({subset_size} images)")
         
         src_base = base_dir.parent / "phase1_data_analysis/data/bdd100k_yolo_dataset/train"
         subset_dir = base_dir / "outputs" / f"subset_{subset_size}"
@@ -223,22 +216,22 @@ def train_yolov8(model_path: str = 'yolov8s.pt',
             return yaml_result
         
         yaml_path = subset_yaml
-        print(f"✅ Using subset: {result['train_images']} train, {result['val_images']} val\n")
+        print(f"Using subset: {result['train_images']} train, {result['val_images']} val\n")
     
     # Validate YAML
     valid, err = validate_path(yaml_path, "YAML")
     if not valid:
-        print(f"❌ {err}")
+        print(f"ERROR: {err}")
         return {"success": False, "error": err}
     
     # Load model
-    print(f"🔧 Loading model: {model_path}")
+    print(f"Loading model: {model_path}")
     try:
         model = YOLO(model_path)
-        print(f"✅ Model loaded (device: {device})\n")
+        print(f"Model loaded (device: {device})\n")
     except Exception as e:
         err = f"Model load failed: {e}"
-        print(f"❌ {err}")
+        print(f"ERROR: {err}")
         return {"success": False, "error": err}
     
     # Training config
@@ -254,7 +247,7 @@ def train_yolov8(model_path: str = 'yolov8s.pt',
         'save_period': max(1, epochs // 10) if epochs > 10 else 1
     }
     
-    print(f"🚀 Starting training...")
+    print(f"Starting training...")
     print(f"   Config: {epochs} epochs, batch {batch_size}, img {img_size}")
     print(f"   Output: {out_dir}/{project_name}\n")
     
@@ -264,21 +257,21 @@ def train_yolov8(model_path: str = 'yolov8s.pt',
         results = model.train(**config)
         train_time = time.time() - start
         
-        print(f"\n✅ Training completed in {train_time:.1f}s")
+        print(f"\nTraining completed in {train_time:.1f}s")
         
         # Extract metrics
         metrics = {}
         if hasattr(results, 'results_dict'):
             metrics = {k: v for k, v in results.results_dict.items() 
                       if isinstance(v, (int, float))}
-            print("\n📊 Results:")
+            print("\nResults:")
             for k, v in metrics.items():
                 print(f"   {k}: {v:.4f}")
         
         # Check weights
         weights = out_dir / project_name / 'weights' / 'best.pt'
         if weights.exists():
-            print(f"\n💾 Weights saved: {weights}")
+            print(f"\nWeights saved: {weights}")
         
         return {
             "success": True, "training_time": train_time,
@@ -289,7 +282,7 @@ def train_yolov8(model_path: str = 'yolov8s.pt',
         
     except Exception as e:
         err = f"Training failed: {e}"
-        print(f"❌ {err}")
+        print(f"ERROR: {err}")
         return {"success": False, "error": err}
 
 
@@ -320,11 +313,11 @@ def train_yolov8_with_custom_loader(
     for p, name in [(img_dir, "images"), (lbl_path, "labels")]:
         valid, err = validate_path(p)
         if not valid:
-            print(f"❌ {err}")
+            print(f"ERROR: {err}")
             return {"success": False, "error": err}
     
     # Create custom loader
-    print("🔧 Step 1: Creating custom PyTorch DataLoader...")
+    print("Step 1: Creating custom PyTorch DataLoader...")
     start = time.time()
     
     dataloader = create_bdd100k_dataloader(
@@ -332,24 +325,24 @@ def train_yolov8_with_custom_loader(
         batch_size=batch_size, img_size=img_size, shuffle=True,
         num_workers=0, subset_size=subset_size, split='train')
     
-    print(f"✅ Loader created in {time.time() - start:.2f}s ({len(dataloader)} batches)\n")
+    print(f"Loader created in {time.time() - start:.2f}s ({len(dataloader)} batches)\n")
     
     # Test first batch
-    print("🔍 Step 2: Testing data loading...")
+    print("Step 2: Testing data loading...")
     images, targets = next(iter(dataloader))
     avg_objs = sum(len(t['labels']) for t in targets) / len(targets)
-    print(f"✅ First batch: {len(images)} images, avg {avg_objs:.1f} objects/image\n")
+    print(f"First batch: {len(images)} images, avg {avg_objs:.1f} objects/image\n")
     
     # Load model
-    print(f"🔧 Step 3: Loading YOLOv8 model...")
+    print(f"Step 3: Loading YOLOv8 model...")
     device = "cuda" if device == "auto" and torch.cuda.is_available() else "cpu"
     model = YOLO(model_path)
     yolo_model = model.model.to(device)
     yolo_model.eval()  # Use eval mode for demo
-    print(f"✅ Model loaded on {device}\n")
+    print(f"Model loaded on {device}\n")
     
     # Process batches (demo - no actual training)
-    print(f"🚀 Step 4: Processing data through model")
+    print(f"Step 4: Processing data through model")
     print(f"   {subset_size} images, {len(dataloader)} batches")
     print(f"   Note: For production, use YAML-based training\n")
     
@@ -387,7 +380,7 @@ def train_yolov8_with_custom_loader(
     train_time = time.time() - train_start
     
     # Save checkpoint
-    print("💾 Step 5: Saving checkpoint...")
+    print("Step 5: Saving checkpoint...")
     out_path = out_dir / (project_name or "custom_loader_demo")
     out_path.mkdir(parents=True, exist_ok=True)
     weights = out_path / 'custom_loader_demo.pt'
@@ -400,20 +393,20 @@ def train_yolov8_with_custom_loader(
         'processing_time': train_time,
     }, weights)
     
-    print(f"✅ Checkpoint saved: {weights}\n")
+    print(f"Checkpoint saved: {weights}\n")
     
     # Summary
-    print(f"📊 Summary:")
+    print(f"Summary:")
     print(f"   Time: {train_time:.1f}s")
     print(f"   Samples: {total_samples}")
     print(f"   Objects: {total_objects}")
     print(f"   Avg batch: {train_time / (len(dataloader) * epochs):.3f}s")
     
-    print(f"\n🎯 Custom Pipeline Demonstrated:")
-    print(f"   ✓ BDD100K JSON → PyTorch tensors")
-    print(f"   ✓ Custom Dataset & DataLoader")
-    print(f"   ✓ Model integration")
-    print(f"   ✓ Training-ready pipeline")
+    print(f"\nCustom Pipeline Demonstrated:")
+    print(f"   BDD100K JSON → PyTorch tensors")
+    print(f"   Custom Dataset & DataLoader")
+    print(f"   Model integration")
+    print(f"   Training-ready pipeline")
     
     return {
         "success": True, "processing_time": train_time,
@@ -438,7 +431,7 @@ def validate_model(model_path: str, data_yaml: str,
     
     # Create validation subset if requested
     if create_subset:
-        print(f"🔧 Creating validation subset ({subset_size} images)")
+        print(f"Creating validation subset ({subset_size} images)")
         
         src_base = base.parent / "phase1_data_analysis/data/bdd100k_yolo_dataset/val"
         subset_dir = base / "outputs" / f"val_subset_{subset_size}"
@@ -457,19 +450,19 @@ def validate_model(model_path: str, data_yaml: str,
             return yaml_result
         
         yaml_path = subset_yaml
-        print(f"✅ Using validation subset: {result['val_images']} images\n")
+        print(f"Using validation subset: {result['val_images']} images\n")
     
     # Validate paths
     for p, name in [(mdl_path, "model"), (yaml_path, "YAML")]:
         valid, err = validate_path(p)
         if not valid:
-            print(f"❌ {err}")
+            print(f"ERROR: {err}")
             return {"success": False, "error": err}
     
     # Run validation
     try:
         model = YOLO(str(mdl_path))
-        print(f"🔧 Running validation...")
+        print(f"Running validation...")
         print(f"   Model: {mdl_path.name}")
         print(f"   Device: {device}")
         if create_subset:
@@ -480,7 +473,7 @@ def validate_model(model_path: str, data_yaml: str,
             data=str(yaml_path), batch=batch_size,
             imgsz=img_size, device=device, verbose=True)
         
-        print("\n📊 Validation Results:")
+        print("\nValidation Results:")
         metrics = {}
         if hasattr(results, 'results_dict'):
             metrics = results.results_dict
@@ -492,7 +485,7 @@ def validate_model(model_path: str, data_yaml: str,
         
     except Exception as e:
         err = f"Validation failed: {e}"
-        print(f"❌ {err}")
+        print(f"ERROR: {err}")
         return {"success": False, "error": err}
 
 
@@ -501,25 +494,25 @@ def demonstrate_custom_dataset_loader():
     print_section("CUSTOM DATASET LOADER DEMONSTRATION")
     
     if not CUSTOM_LOADER_AVAILABLE:
-        print("❌ Custom loader not available")
+        print("ERROR: Custom loader not available")
         return False
     
-    print("🔧 Testing custom PyTorch DataLoader...")
+    print("Testing custom PyTorch DataLoader...")
     print("   Loads BDD100K JSON → PyTorch tensors\n")
     
     try:
         success = demo_dataset_loading(subset_size=5)
         
         if success:
-            print("\n✅ Custom loader working!")
+            print("\nCustom loader working!")
             print("   Features: Dataset, DataLoader, collate_fn, transforms")
         else:
-            print("\n⚠️  Loader complete (requires BDD100K data)")
+            print("\nLoader complete (requires BDD100K data)")
         
         return True
         
     except Exception as e:
-        print(f"\n❌ Demo failed: {e}")
+        print(f"\nERROR: Demo failed: {e}")
         return False
 
 
@@ -583,7 +576,7 @@ def main():
     
     # Run custom loader training
     elif args.use_custom_loader:
-        print("🔄 Using custom PyTorch DataLoader")
+        print("Using custom PyTorch DataLoader")
         results = train_yolov8_with_custom_loader(
             args.model, args.images_dir, args.labels_path,
             args.subset_size, args.epochs, args.batch, args.imgsz, args.device)
@@ -591,9 +584,9 @@ def main():
     # Run standard training
     else:
         if args.create_subset:
-            print("🔄 YAML-based training with subset")
+            print("YAML-based training with subset")
         else:
-            print("🔄 YAML-based training (standard)")
+            print("YAML-based training (standard)")
         
         results = train_yolov8(
             args.model, args.data, args.epochs, args.batch, args.imgsz,
@@ -602,9 +595,9 @@ def main():
     
     # Print result
     if results['success']:
-        print(f"\n🎉 Operation completed!")
+        print(f"\nOperation completed!")
     else:
-        print(f"\n❌ Failed: {results.get('error', 'Unknown')}")
+        print(f"\nFailed: {results.get('error', 'Unknown')}")
         exit(1)
 
 
