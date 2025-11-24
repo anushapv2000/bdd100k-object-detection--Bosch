@@ -55,11 +55,11 @@ def run_complete_evaluation(
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    print(f"📁 Output Directory: {output_path}")
+    print(f" Output Directory: {output_path}")
     print()
 
     # Step 1: Model Evaluation
-    print("🚀 STEP 1: MODEL EVALUATION")
+    print(" STEP 1: MODEL EVALUATION")
     print("-" * 40)
 
     evaluator = BDD100KEvaluator(
@@ -73,11 +73,11 @@ def run_complete_evaluation(
     results = evaluator.evaluate(max_images=max_images)
     results_path = output_path / "evaluation_results.json"
 
-    print(f"✅ Evaluation completed: {results_path}")
+    print(f" Evaluation completed: {results_path}")
     print()
 
     # Step 2: Visualization Generation
-    print("🎨 STEP 2: VISUALIZATION GENERATION")
+    print("STEP 2: VISUALIZATION GENERATION")
     print("-" * 40)
 
     viz_dir = output_path / "visualizations"
@@ -87,7 +87,7 @@ def run_complete_evaluation(
 
     visualizer.create_all_visualizations(include_qualitative=False)
 
-    print(f"✅ Visualizations completed: {viz_dir}")
+    print(f" Visualizations completed: {viz_dir}")
     print()
 
     # Step 3: Comprehensive Analysis
@@ -101,11 +101,11 @@ def run_complete_evaluation(
     analysis_path = output_path / "analysis_report"
     report = analyzer.generate_comprehensive_report(output_path=str(analysis_path))
 
-    print(f"✅ Analysis completed: {analysis_path}.md")
+    print(f" Analysis completed: {analysis_path}.md")
     print()
 
     # Summary
-    print("📊 EVALUATION SUMMARY")
+    print(" EVALUATION SUMMARY")
     print("-" * 40)
 
     overall_map = results.get("map", {}).get("mAP@0_50", 0)
@@ -129,12 +129,12 @@ def run_complete_evaluation(
             print(f"  {name}: {ap:.1%}")
 
     # File summary
-    print(f"\n📁 Generated Files:")
-    print(f"  📄 Evaluation Results: evaluation_results.json")
-    print(f"  📄 Per-class Metrics: per_class_metrics.csv")
-    print(f"  📊 Visualizations: visualizations/ (4 plots)")
-    print(f"  📋 Analysis Report: analysis_report.md")
-    print(f"  📋 Analysis Data: analysis_report.json")
+    print(f"\n Generated Files:")
+    print(f"   Evaluation Results: evaluation_results.json")
+    print(f"   Per-class Metrics: per_class_metrics.csv")
+    print(f"   Visualizations: visualizations/ (4 plots)")
+    print(f"   Analysis Report: analysis_report.md")
+    print(f"   Analysis Data: analysis_report.json")
 
     # Recommendations preview
     recommendations = report.get("improvement_recommendations", {})
@@ -201,7 +201,7 @@ Examples:
         "--phase1-path", help="Path to Phase 1 analysis results (for integration)"
     )
     parser.add_argument(
-        "--max-images", type=int, help="Maximum images to process (for testing)"
+        "--max-images", type=int,default=100, help="Maximum images to process (for testing)"
     )
     parser.add_argument(
         "--confidence",
@@ -220,25 +220,25 @@ Examples:
     data_path = Path(args.data_path)
 
     if not model_path.exists():
-        print(f"❌ Error: Model file not found: {model_path}")
+        print(f" Error: Model file not found: {model_path}")
         sys.exit(1)
 
     if not data_path.exists():
-        print(f"❌ Error: Data directory not found: {data_path}")
+        print(f" Error: Data directory not found: {data_path}")
         sys.exit(1)
 
     # Check for required subdirectories
     if not (data_path / "images").exists():
-        print(f"❌ Error: Images directory not found: {data_path / 'images'}")
+        print(f" Error: Images directory not found: {data_path / 'images'}")
         sys.exit(1)
 
     if not (data_path / "labels").exists():
-        print(f"❌ Error: Labels directory not found: {data_path / 'labels'}")
+        print(f" Error: Labels directory not found: {data_path / 'labels'}")
         sys.exit(1)
 
     # Validate Phase 1 path if provided
     if args.phase1_path and not Path(args.phase1_path).exists():
-        print(f"⚠️  Warning: Phase 1 file not found: {args.phase1_path}")
+        print(f"  Warning: Phase 1 file not found: {args.phase1_path}")
         print("Continuing without Phase 1 integration...")
         args.phase1_path = None
 
@@ -254,16 +254,16 @@ Examples:
             iou=args.iou,
         )
 
-        print(f"\n🎉 Success! Evaluation completed successfully.")
+        print(f"\n Success! Evaluation completed successfully.")
         print(f"📂 Results available at: {results['output_dir']}")
 
         return results
 
     except KeyboardInterrupt:
-        print("\n⚠️  Evaluation interrupted by user")
+        print("\n  Evaluation interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Error during evaluation: {e}")
+        print(f"\n Error during evaluation: {e}")
         import traceback
 
         traceback.print_exc()
