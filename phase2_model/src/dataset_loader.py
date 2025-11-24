@@ -189,8 +189,8 @@ class BDD100KDataset(Dataset):
             # Ensure coordinates are within bounds
             x1_scaled = max(0, min(self.img_size - 1, x1_scaled))
             y1_scaled = max(0, min(self.img_size - 1, y1_scaled))
-            x2_scaled = max(0, min(self.img_size, x2_scaled))
-            y2_scaled = max(0, min(self.img_size, y2_scaled))
+            x2_scaled = max(0, min(self.img_size - 1, x2_scaled))
+            y2_scaled = max(0, min(self.img_size - 1, y2_scaled))
             
             # Skip if box becomes invalid after scaling
             if x2_scaled <= x1_scaled or y2_scaled <= y1_scaled:
@@ -460,7 +460,7 @@ def demo_dataset_loading(
         )
         
         dataset_time = time.time() - start_time
-        print(f"\n⏱️  Dataset creation time: {dataset_time:.2f}s")
+        print(f"\nDataset creation time: {dataset_time:.2f}s")
         
         # Show class distribution
         print(f"\nClass Distribution in Subset:")
@@ -482,14 +482,14 @@ def demo_dataset_loading(
         )
         
         dataloader_time = time.time() - start_time
-        print(f"\n⏱️  DataLoader creation time: {dataloader_time:.2f}s")
+        print(f"\nDataLoader creation time: {dataloader_time:.2f}s")
         
         # Time batch loading
         start_time = time.time()
         print(f"\nLoading first batch...")
         images, targets = next(iter(dataloader))
         batch_time = time.time() - start_time
-        print(f"⏱️  Batch loading time: {batch_time:.2f}s")
+        print(f"Batch loading time: {batch_time:.2f}s")
         
         print(f"Batch loaded successfully:")
         print(f"  Number of images: {len(images)}")
@@ -504,15 +504,15 @@ def demo_dataset_loading(
                 print(f"    Label shapes: {target['labels'].shape}")
                 print(f"    Classes present: {target['labels'].tolist()}")
         
-        print(f"\n✅ Dataset loader working correctly!")
-        print(f"   Ready to feed data into PyTorch models")
+        print(f"\nDataset loader working correctly!")
+        print(f"Ready to feed data into PyTorch models")
         
         return True
         
     except Exception as e:
-        print(f"\n❌ Dataset loading failed:")
-        print(f"   Error: {e}")
-        print(f"   This is expected if BDD100K data is not available")
+        print(f"\nDataset loading failed:")
+        print(f"Error: {e}")
+        print(f"This is expected if BDD100K data is not available")
         return False
 
 
@@ -529,22 +529,22 @@ if __name__ == "__main__":
     success = demo_dataset_loading()
     
     if success:
-        print("\n🎉 Dataset loader demonstration completed successfully!")
+        print("\nDataset loader demonstration completed successfully!")
     else:
-        print("\n⚠️  Demo requires BDD100K data to be available")
-        print("   However, the loader implementation is complete and functional")
+        print("\nDemo requires BDD100K data to be available")
+        print("However, the loader implementation is complete and functional")
     
-    print(f"\n📋 Dataset Loader Features:")
-    print(f"   ✅ PyTorch Dataset implementation")
-    print(f"   ✅ Custom DataLoader with collate function")
-    print(f"   ✅ Handles variable number of objects per image")
-    print(f"   ✅ Converts BDD100K JSON to PyTorch tensors")
-    print(f"   ✅ Applies transforms and normalization")
-    print(f"   ✅ Compatible with torchvision detection models")
-    print(f"   ✅ Supports batch loading and multi-processing")
-    print(f"   ✅ Performance-optimized for small subsets (fast streaming)")
+    print(f"\nDataset Loader Features:")
+    print(f"   PyTorch Dataset implementation")
+    print(f"   Custom DataLoader with collate function")
+    print(f"   Handles variable number of objects per image")
+    print(f"   Converts BDD100K JSON to PyTorch tensors")
+    print(f"   Applies transforms and normalization")
+    print(f"   Compatible with torchvision detection models")
+    print(f"   Supports batch loading and multi-processing")
+    print(f"   Performance-optimized for small subsets (fast streaming)")
     
-    print(f"\n🚀 Performance Optimization:")
-    print(f"   • Small subsets (≤100): Fast streaming (seconds)")
-    print(f"   • Large datasets: Full loading (minutes)")
-    print(f"   • Avoids loading 69,000+ annotations when only 5-10 needed")
+    print(f"\nPerformance Optimization:")
+    print(f"   Small subsets (<=100): Fast streaming (seconds)")
+    print(f"   Large datasets: Full loading (minutes)")
+    print(f"   Avoids loading 69,000+ annotations when only 5-10 needed")
