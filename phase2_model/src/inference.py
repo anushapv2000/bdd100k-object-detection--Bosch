@@ -7,7 +7,7 @@ Focuses on core inference functionality for the assignment.
 Author: Bosch Assignment - Phase 2
 Date: November 2025
 """
-
+import os
 import torch
 import json
 from pathlib import Path
@@ -52,10 +52,10 @@ class BDD100kInference:
             self.device = device
 
         # Load model
-        print(f"🔧 Loading model: {model_path}")
+        print(f"Loading model: {model_path}")
         try:
             self.model = YOLO(model_path)
-            print(f"✅ Model loaded successfully on {self.device}")
+            print(f"Model loaded successfully on {self.device}")
             print_model_summary(self.model)
         except Exception as e:
             raise RuntimeError(f"Failed to load model: {e}")
@@ -85,7 +85,7 @@ class BDD100kInference:
             device=self.device,
             verbose=False
         )[0]
-
+        os.makedirs(output_dir, exist_ok=True)
         # Extract detections
         boxes = results.boxes.xyxy.cpu().numpy()  # x1, y1, x2, y2
         scores = results.boxes.conf.cpu().numpy()
@@ -144,7 +144,7 @@ class BDD100kInference:
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True, parents=True)
 
-        print(f"🚀 Running inference on {len(image_paths)} images...")
+        print(f"Running inference on {len(image_paths)} images...")
 
         all_predictions = []
 
@@ -166,12 +166,12 @@ class BDD100kInference:
             json_path = output_path / 'predictions.json'
             with open(json_path, 'w') as f:
                 json.dump(all_predictions, f, indent=2)
-            print(f"💾 Saved predictions to: {json_path}")
+            print(f"Saved predictions to: {json_path}")
 
         # Print summary
         total_detections = sum(pred['num_detections']
                                for pred in all_predictions)
-        print(f"\n📊 Inference Summary:")
+        print(f"\nInference Summary:")
         print(f"   Images processed: {len(all_predictions)}")
         print(f"   Total detections: {total_detections}")
         print(
@@ -198,7 +198,7 @@ class BDD100kInference:
         """
         import time
 
-        print(f"🏃 Benchmarking inference speed...")
+        print(f"Benchmarking inference speed...")
         print(f"   Image: {Path(image_path).name}")
         print(f"   Runs: {num_runs} (+ {warmup_runs} warmup)")
 
@@ -240,7 +240,7 @@ class BDD100kInference:
             'num_runs': num_runs
         }
 
-        print(f"\n⚡ Speed Benchmark Results:")
+        print(f"\nSpeed Benchmark Results:")
         print(f"   Average: {avg_time:.1f}ms ({stats['fps']:.1f} FPS)")
         print(f"   Min: {min_time:.1f}ms")
         print(f"   Max: {max_time:.1f}ms")
@@ -303,32 +303,32 @@ def main():
     # Run inference based on mode
     if args.benchmark:
         stats = inference.benchmark_speed(args.benchmark)
-        print(f"\n🎯 Benchmark completed: {stats['average_ms']:.1f}ms average")
+        print(f"\nBenchmark completed: {stats['average_ms']:.1f}ms average")
 
     elif args.image:
         predictions = inference.predict_image(
             args.image, output_dir=args.output)
         print(
-            f"\n🎯 Inference completed: {predictions['num_detections']} detections")
+            f"\nInference completed: {predictions['num_detections']} detections")
 
     elif args.batch:
         image_paths = glob.glob(args.batch)
         if not image_paths:
-            print(f"❌ No images found matching pattern: {args.batch}")
+            print(f"No images found matching pattern: {args.batch}")
             return
 
         # Limit number of images if count is specified
         if args.count is not None:
             image_paths = image_paths[:args.count]
-            print(f"📊 Processing {len(image_paths)} images (limited by --count {args.count})")
+            print(f"Processing {len(image_paths)} images (limited by --count {args.count})")
 
         predictions = inference.predict_batch(
             image_paths, output_dir=args.output
         )
-        print(f"\n🎯 Batch inference completed on {len(predictions)} images")
+        print(f"\nBatch inference completed on {len(predictions)} images")
 
     else:
-        print("❌ Please specify --image, --batch, or --benchmark")
+        print("Please specify --image, --batch, or --benchmark")
         parser.print_help()
 
 
