@@ -96,7 +96,7 @@ bdd100k-object-detection--Bosch/
 **Step 3: Run YOLO Format Conversion**
 ```bash
 cd phase2_model
-Update the path in configs/bdd100k.yaml
+update the data path in configs/bdd100k.yaml
 python src/convert_to_yolo.py
 ```
 
@@ -220,7 +220,7 @@ python src/model_selection.py
 ### 5. Inference Testing
 ```powershell
 # Single image prediction
-python src/inference.py --image "outputs\subset_10\train\images\0bb001f6-80239764.jpg" --device cpu --conf 0.3
+python src/inference.py --image "outputs\subset_10\train\images\0c5ff0c6-d547ace3.jpg" --device cpu --conf 0.3
 
 # Batch processing with count limit
 python src/inference.py --batch "outputs\subset_10\train\images\*.jpg" --count 3 --device cpu --conf 0.3
